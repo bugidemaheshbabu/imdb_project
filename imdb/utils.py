@@ -4,10 +4,11 @@ from datetime import date
 
 def populate_actors() :
     import json
-    f = open("/home/rguktrkv/Desktop/complete_data/actors_5000.json","r")
+    f_5000 = open("/home/rguktrkv/Desktop/complete_data/actors_5000.json","r")
+    f = open("/home/rguktrkv/Downloads/100_movies/actors_100.json","r")
     actors_list = f.read()
     actor_json_list = json.loads(actors_list)
-    for actor in actor_json_list[:500]:
+    for actor in actor_json_list:
         Actor.objects.create(
         actor_id = actor['actor_id'],
         name=actor['name'],
@@ -16,41 +17,51 @@ def populate_actors() :
     
 def populate_directors():
     import json
-    f = open("/home/rguktrkv/Desktop/complete_data/directors_5000.json","r")
+    f_5000 = open("/home/rguktrkv/Desktop/complete_data/directors_5000.json","r")
+    f = open("/home/rguktrkv/Downloads/100_movies/directors_100.json","r")
     directors_list = f.read()
     directors_json_list = json.loads(directors_list) 
-    for director in directors_json_list[:500] :
+    for director in directors_json_list :
         Director.objects.create(
             name = director['name'],
             gender = director['gender']
         )   
     
+import random
+actors_role = ['Hero','villan','Heroine','Comedian','Child','Co-star']
 def populate_movies():
     import json
-    f = open("/home/rguktrkv/Desktop/complete_data/movies_5000.json","r")
+    import uuid
+    f_500 = open("/home/rguktrkv/Desktop/complete_data/movies_5000.json","r")
+    f = open("/home/rguktrkv/Downloads/100_movies/movies_100.json","r")
     movies_list = f.read()
     movies_json_list = json.loads(movies_list) 
-    for movie in movies_json_list[:500] : 
-        Movie.objects.create(movie_id = movie['movie_id'],
+#    print(movies_json_list[:10])
+    for movie in movies_json_list : 
+        if movie['year_of_release'] == '' :
+            movie['year_of_release'] = '0'
+        if movie['budget'] == '' :
+            movie['budget'] = '0'
+        movie_obj = Movie.objects.create(movie_id = uuid.uuid4(),
             name = movie['name'],
             box_office_collection_in_crores = movie['box_office_collection_in_crores'],
             director = Director.objects.get(name = movie['director_name']),
             year_of_release = int(movie['year_of_release']),
-            budget = movie['budget'],
+            budget = int(movie['budget']),
             language  = movie['language'],
             average_rating = movie['average_rating']
         )
         for actor in movie['actors']:
             Cast.objects.create(
                     actor = Actor.objects.get(actor_id = actor['actor_id']),
-                    movie = Movie.objects.get(movie_id = movie['movie_id']),
-                    role = actor['role']
+                    movie = movie_obj,
+                    role = random.choice(actors_role)
             )
-        for genre in movie['genre'] :
+        for genre in movie['genres'] :
             try :
-                movie.genres.add(Genre.objects.get(genre = genre))
+                movie_obj.genres.add(Genre.objects.get(genre = genre))
             except Genre.DoesNotExist :
-                movie.genres.add(Genre.objects.create(genre = genre))
+                movie_obj.genres.add(Genre.objects.create(genre = genre))
 
         
 
@@ -108,8 +119,8 @@ def get_one_bar_plot_data():
 def movie_collections_in_single_bar() :
     import json
     from imdb.models import Movie
-    movie_collections = Movie.objects.values_list('box_office_collection_in_crores', flat = True)
-    movie_names = Movie.objects.values_list('name', flat = True)
+    movie_collections = Movie.objects.values_list('box_office_collection_in_crores', flat = True)[:5]
+    movie_names = Movie.objects.values_list('name', flat = True)[:5]
     
     single_bar_chart_data = {
         "labels": list(movie_names),
@@ -251,7 +262,7 @@ def movie_collections_as_per_year() :
     import json
     from imdb.models import Movie
     from imdb.utils import execute_sql_query
-    collections_list = execute_sql_query('select SUM(box_office_collection_in_crores),strftime("%Y",release_date) as year from imdb_movie GROUP BY year')
+    collections_list = execute_sql_query('select SUM(box_office_collection_in_crores),year_of_release as year from imdb_movie GROUP BY year')
     collections = []
     collections_year =[]
     for item in collections_list :
@@ -282,7 +293,7 @@ def no_of_movie_per_year():
     import json
     from imdb.models import Movie
     from imdb.utils import execute_sql_query
-    collections_list = execute_sql_query('select strftime("%Y",release_date) as year, COUNT(*) from (select * from (select * from imdb_movie  INNER JOIN imdb_cast  ON (imdb_movie.movie_id =imdb_cast.movie_id))where is_debut_movie = 1)group by year')
+    collections_list = execute_sql_query('select year_of_release as year, COUNT(*) from (select * from (select * from imdb_movie  INNER JOIN imdb_cast  ON (imdb_movie.movie_id =imdb_cast.movie_id))where is_debut_movie = 1)group by year')
     collections = []
     collections_year =[]
     for item in collections_list :
@@ -403,10 +414,11 @@ def movie_collections_in_doughnut_chart() :
         'doughnut_graph_data_one_title': 'Title',
     }
 
+
 def collections_by_genre() :
     import json
     from imdb.models import Movie
-    collections_list = execute_sql_query("select SUM(box_office_collection_in_crores),genre from imdb_movie GROUP BY genre;")
+    collections_list = execute_sql_query("select SUM(box_office_collection_in_crores),genre_id from imdb_movie as mv inner join imdb_movie_genres as gn on (mv.movie_id = gn.movie_id) group by genre_id order by genre_id ASC LIMIT 5;")
     collections = []
     genre =[]
     for item in collections_list :
@@ -538,8 +550,8 @@ def get_polar_chart_data():
 def movie_collections_in_polar_data() :
     import json
     from imdb.models import Movie
-    movie_collections = Movie.objects.values_list('box_office_collection_in_crores', flat = True)
-    movie_names = Movie.objects.values_list('name', flat = True)
+    movie_collections = Movie.objects.values_list('box_office_collection_in_crores', flat = True)[:5]
+    movie_names = Movie.objects.values_list('name', flat = True)[:5]
     
     polar_chart_data = {
         "datasets": [{

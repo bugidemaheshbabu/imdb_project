@@ -33,32 +33,21 @@ def director(request, name) :
     return render(request, 'imdb_director.html', context)
 
 def analytics(request) :
-    from .utils import no_of_movie_per_year,get_multi_line_plot_data,collections_by_genre,collection_of_actor,get_one_bar_plot_data,movie_collections_as_per_year,get_area_plot_data,get_radar_chart_data,movie_collections_in_polar_data,movie_collections_in_doughnut_chart,movie_collections_in_single_bar,get_area_plot_data
-    
-    """
-    polar_data = movie_collections_in_polar_data()
-    bar_data = movie_collections_in_single_bar()
-    doughnut_data = movie_collections_in_doughnut_chart()
-    area_data = get_area_plot_data()
-    
-    temp = get_radar_chart_data()
-    temp.update(polar_data)
-    temp.update(bar_data)
-    temp.update(doughnut_data)
-    temp.update(area_data)
-    temp.update(collections_data)
-    """
-    
-    temp = collection_of_actor()
+    from imdb.utils import collections_by_genre,movie_collections_in_polar_data,movie_collections_as_per_year,movie_collections_in_single_bar,collection_of_actor
 
-    collections_data = movie_collections_as_per_year()
-    temp.update(collections_data)
-    
+    data = movie_collections_in_single_bar()
+
+    # collection_of_actor_data = collection_of_actor()
+    # data.update(collection_of_actor_data)
+
     collections_by_genre_data = collections_by_genre()
-    temp.update(collections_by_genre_data)
+    data.update(collections_by_genre_data)
     
-    per_year = no_of_movie_per_year()
-    temp.update(per_year)
-    
-    print(temp)
-    return render(request, 'analytics.html', context = temp)
+    movie_collections_as_per_year_data = movie_collections_as_per_year()
+    data.update(movie_collections_as_per_year_data)
+
+    movie_collections_in_polar_data_data = movie_collections_in_polar_data()
+    data.update(movie_collections_in_polar_data_data)
+
+    return render(request, 'analytics.html', data)
+

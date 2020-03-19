@@ -23,7 +23,7 @@ class Movie(models.Model):
     director = models.ForeignKey(Director,on_delete = models.CASCADE,)
     actors = models.ManyToManyField(Actor,through='Cast')
     budget = models.IntegerField()
-    genre = models.ManyToManyField(Genre)
+    genres = models.ManyToManyField(Genre)
     language = models.CharField(max_length = 100)
     average_rating = models.FloatField()
 
